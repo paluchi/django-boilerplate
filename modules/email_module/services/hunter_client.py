@@ -7,7 +7,7 @@ import requests
 
 class HunterClient:
     """
-    A client for interacting with the Hunter API.
+    A client for abstractly interacting with the Hunter API.
 
     This class provides methods for verifying email deliverability, counting domain emails,
     searching for emails associated with a domain, and finding email addresses based on

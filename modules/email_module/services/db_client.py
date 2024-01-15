@@ -8,7 +8,7 @@ from ..models import Email
 
 
 class DatabaseClient:
-    """A class that provides database operations for email objects."""
+    """A class that provides abstracted database operations for email objects."""
 
     @staticmethod
     def get_email_by_address(
