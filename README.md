@@ -20,6 +20,8 @@ Run the Django server with: `python manage.py runserver`
 
 The application will be available at `http://localhost:8000/`.
 
+Open `http://localhost:8000/docs` in your prefered browser and start testing.
+
 ### Test Linting
 `mypy .`
 `flake8 .`
