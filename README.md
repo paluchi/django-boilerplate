@@ -7,13 +7,12 @@ This Django application integrates with an email verification service (like Hunt
 
 ### Prerequisites
 - Python 3.x
-- Other dependencies listed in `requirements.txt`
 
 ### Installation
 1. Clone the repository
 2. Install required packages:`pip install -r requirements.txt`
+4. create .env file and add required environment variables
 3. Make migrations `python manage.py migrate`
-4. create .env file and add .env.example variables for testing purposes
 
 
 ### Running the Application
