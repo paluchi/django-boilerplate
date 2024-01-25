@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional
 
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,6 +16,7 @@ class EmailServiceView(viewsets.ModelViewSet):
 
     queryset = Email.objects.all()
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
+    hunter_client = HunterClient()
 
     @property
     def serializer_class(self) -> Any:
@@ -28,6 +28,39 @@ class EmailServiceView(viewsets.ModelViewSet):
         "update": UpdateEmailSerializer,
     }
 
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        """
+        Runs anything that needs to occur prior to calling the method handler.
+
+        Args:
+            request (Request): The request object.
+            args (Any): Positional arguments.
+            kwargs (Any): Keyword arguments.
+        """
+        # First, run the parent's initial to set up the basics
+        super().initial(request, *args, **kwargs)
+
+        # Then perform your serialization check for every incoming request
+        self.check_serialization(request)
+        # Other duplicated code for every incoming request can go here
+
+    def check_serialization(self, request: Request, raise_exception=True) -> bool:
+        """
+        Checks if the request data is valid.
+
+        Args:
+            request (Request): The request object.
+
+        Raises:
+            ValidationError: If the request data is invalid.
+        """
+        # If the action is defined within the serializer classes, validate the request data, else return True
+        if self.action in self.serializer_classes.keys():
+            serializer = self.get_serializer(data=request.data)
+            return serializer.is_valid(raise_exception=raise_exception)
+        else:
+            return True
+
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
         Create a new email record and verifies the email address.
@@ -38,8 +71,6 @@ class EmailServiceView(viewsets.ModelViewSet):
         Returns:
             Response: The response object.
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
         email: str = request.data.get("email")
         email_data: Optional[Dict[str, Any]] = DatabaseClient.get_email_by_address(
@@ -48,21 +79,26 @@ class EmailServiceView(viewsets.ModelViewSet):
         if email_data is not None:
             return Response(email_data, status=status.HTTP_200_OK)
 
-        client = HunterClient()
-        response: Optional[Dict[str, Any]] = client.verify_email(email)
-        if response is None:
+        try:
+            response: Optional[Dict[str, Any]] = self.hunter_client.verify_email(email)
+            if response is None:
+                return Response(
+                    {"error": "Failed to verify email"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            new_email_data: Optional[Dict[str, Any]] = DatabaseClient.store_email(
+                email,
+                response["status"],
+                response["score"],
+                response["disposable"],
+            )
+            return Response(new_email_data, status=status.HTTP_201_CREATED)
+        except Exception as err:
             return Response(
                 {"error": "Failed to verify email"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        new_email_data: Optional[Dict[str, Any]] = DatabaseClient.store_email(
-            email,
-            response["status"],
-            response["score"],
-            response["disposable"],
-        )
-        return Response(new_email_data, status=status.HTTP_201_CREATED)
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
@@ -75,22 +111,17 @@ class EmailServiceView(viewsets.ModelViewSet):
         Returns:
             Response: The response object.
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
         email_id: int = kwargs.get("pk")  # type: ignore
         internal_status: str = request.data.get("internal_status")
-        try:
-            DatabaseClient.update_email(
-                email_id,
-                internal_status=internal_status,
-                raise_exception=True,
-            )
-            return Response(
-                status=status.HTTP_200_OK,
-            )
-        except ObjectDoesNotExist as error:
-            return Response({"error": str(error)}, status=status.HTTP_404_NOT_FOUND)
+        DatabaseClient.update_email(
+            email_id,
+            internal_status=internal_status,
+            raise_exception=True,
+        )
+        return Response(
+            status=status.HTTP_200_OK,
+        )
 
     # Disable unused methods
     def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
