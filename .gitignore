@@ -11,3 +11,4 @@ staticfiles/
 
 # Others
 *.diff
+*.pyi

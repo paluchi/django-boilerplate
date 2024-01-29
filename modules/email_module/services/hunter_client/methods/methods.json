@@ -1,0 +1,23 @@
+{
+    "verify_email": {
+      "endpoint": "email-verifier",
+      "params": ["email"],
+      "headers": {}
+    },
+    "count_domain_emails": {
+      "endpoint": "email-count",
+      "params": ["domain"],
+      "headers": {}
+    },
+    "domain_search": {
+      "endpoint": "domain-search",
+      "params": ["domain"],
+      "headers": {}
+    },
+    "find_email": {
+      "endpoint": "email-finder",
+      "params": ["first_name", "last_name", "domain"],
+      "headers": {}
+    }
+  }
+  
