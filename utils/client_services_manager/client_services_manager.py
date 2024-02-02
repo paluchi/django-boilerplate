@@ -164,15 +164,21 @@ class ClientServicesManager(StubsGenerator):  # noqa: WPS214
             # If the file does not exist, no DTO class is found
             return None
 
+        # Preparing a custom namespace
+        custom_namespace = {}
+
         # Parse the file and find the DTO class
         parsed_ast = ast.parse(file_contents)
         for node in parsed_ast.body:
-            if isinstance(node, ast.ClassDef) and "dto" in node.name.lower():
+            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
+                # Execute import statements to populate the namespace
+                exec(astor.to_source(node), custom_namespace)
+            elif isinstance(node, ast.ClassDef) and "dto" in node.name.lower():
                 class_source = textwrap.dedent(astor.to_source(node))
                 class_name = node.name
-                # Execute the class definition in a safe namespace
-                namespace: Dict[str, Any] = {}
-                exec(class_source, globals(), namespace)
-                return namespace.get(class_name)
+
+                # Execute the class definition in the custom namespace
+                exec(class_source, custom_namespace)
+                return custom_namespace.get(class_name)
 
         return None

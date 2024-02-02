@@ -1,29 +1,36 @@
+from dataclasses import dataclass, field
 from typing import Any
 
 
+@dataclass
 class EmailDTO:
     """The EmailDTO class."""
 
+    status: str
+    score: float
+    disposable: bool
+    additional_attributes: dict = field(default_factory=dict, repr=False)
+
     def __init__(self, status: str, score: float, disposable: bool, **kwargs: Any):
-        """Initialize a new instance of the EmailDTO class."""
+        """Initialize the EmailDTO with given parameters and any additional keyword arguments."""
         self.status = status
         self.score = float(score)
         self.disposable = disposable
-        self._validate()
+        self.additional_attributes = kwargs
+        self.__post_init__()
 
-    def __repr__(self) -> str:
-        """Return the string representation of the EmailDTO object."""
-        class_name = "VerifyEmailDTO"
-        status_repr = f"status={self.status}"
-        score_repr = f"score={self.score}"
-        disposable_repr = f"disposable={self.disposable}"
-        return f"{class_name}({status_repr}, {score_repr}, {disposable_repr})"
-
-    def _validate(self) -> None:
-        """Validate the EmailDTO object."""
+    def __post_init__(self):
+        """Validate the EmailDTO object after initialization and handle additional kwargs."""
         if not isinstance(self.status, str):
             raise ValueError("Status must be a string")
         if not isinstance(self.score, float):
             raise ValueError("Score must be a float")
         if not isinstance(self.disposable, bool):
             raise ValueError("Disposable must be a boolean")
+
+        # Set additional attributes
+        for key, value in self.additional_attributes.items():
+            setattr(self, key, value)
+
+        # Clear the dictionary as its items are now attributes
+        self.additional_attributes.clear()
