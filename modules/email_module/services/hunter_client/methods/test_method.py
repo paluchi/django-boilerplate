@@ -8,14 +8,13 @@ class TestDTO:
 
     status: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the TestDTO object."""
         if not isinstance(self.status, str):
             raise ValueError("Status must be a string")
 
 
-def test_method_handler(self: Any, yourText: str) -> Any:
+def test_method_handler(self: Any, your_text: str) -> Any:
     """TEST DESCRIPTION."""
-
-    print("This is a test method handler", yourText)
+    print("This is a test method handler", your_text)
     return TestDTO(status="success")

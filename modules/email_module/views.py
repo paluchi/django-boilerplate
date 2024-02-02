@@ -72,7 +72,6 @@ class EmailServiceView(viewsets.ModelViewSet):
         Returns:
             Response: The response object.
         """
-
         email: str = request.data.get("email")
         email_data: Optional[Dict[str, Any]] = DatabaseClient.get_email_by_address(
             email,

@@ -165,12 +165,12 @@ class ClientServicesManager(StubsGenerator):  # noqa: WPS214
             return None
 
         # Preparing a custom namespace
-        custom_namespace = {}
+        custom_namespace: Any = {}
 
         # Parse the file and find the DTO class
         parsed_ast = ast.parse(file_contents)
         for node in parsed_ast.body:
-            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
                 # Execute import statements to populate the namespace
                 exec(astor.to_source(node), custom_namespace)
             elif isinstance(node, ast.ClassDef) and "dto" in node.name.lower():

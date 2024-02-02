@@ -19,7 +19,7 @@ class EmailDTO:
         self.additional_attributes = kwargs
         self.__post_init__()
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the EmailDTO object after initialization and handle additional kwargs."""
         if not isinstance(self.status, str):
             raise ValueError("Status must be a string")
@@ -29,8 +29,8 @@ class EmailDTO:
             raise ValueError("Disposable must be a boolean")
 
         # Set additional attributes
-        for key, value in self.additional_attributes.items():
-            setattr(self, key, value)
+        for key, attr_value in self.additional_attributes.items():
+            setattr(self, key, attr_value)
 
         # Clear the dictionary as its items are now attributes
         self.additional_attributes.clear()

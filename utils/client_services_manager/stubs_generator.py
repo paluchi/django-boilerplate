@@ -39,32 +39,49 @@ class StubsGenerator:  # noqa: WPS214
 
     def _generate_class_stubs(self, dto_imports: List[str]) -> str:
         """Generate stubs for the class defined in the .py file."""
-        class_stubs = ""
+        class_ast = self._parse_class_file()
+        return self._generate_stubs_for_class(class_ast, dto_imports)
 
+    def _parse_class_file(self) -> ast.AST:
+        """Parse the class file and return its AST."""
         with open(self.class_file_path, "r") as class_file:
             class_contents = class_file.read()
-            class_ast = ast.parse(class_contents)
+            return ast.parse(class_contents)
 
+    def _generate_stubs_for_class(
+        self,
+        class_ast: ast.AST,
+        dto_imports: List[str],
+    ) -> str:
+        """Generate stubs for a single class."""
+        class_stubs = ""
         for node in class_ast.body:
             if isinstance(node, ast.ClassDef) and node.name == self.__class__.__name__:
                 class_stubs += f"class {node.name}:\n"
-                for body_item in node.body:
-                    if isinstance(body_item, ast.FunctionDef):
-                        # Determine the return type of the function
-                        return_type = self._determine_function_return_type(body_item)
-                        if return_type and return_type not in dto_imports:
-                            dto_imports.append(return_type)
-
-                        class_stubs += self._generate_stub_for_function(
-                            body_item,
-                            dto_imports,
-                            self.class_file_path,
-                            return_type=return_type,
-                        )
-                # Add two newlines after the class definition for readability
+                class_stubs += self._generate_stubs_for_class_methods(node, dto_imports)
                 class_stubs += "\n\n"
-
         return class_stubs
+
+    def _generate_stubs_for_class_methods(
+        self,
+        class_node: ast.ClassDef,
+        dto_imports: List[str],
+    ) -> str:
+        """Generate stubs for the methods of a class."""
+        method_stubs = ""
+        for body_item in class_node.body:
+            if isinstance(body_item, ast.FunctionDef):
+                return_type = self._determine_function_return_type(body_item)
+                if return_type and return_type not in dto_imports:
+                    dto_imports.append(return_type)
+
+                method_stubs += self._generate_stub_for_function(
+                    body_item,
+                    dto_imports,
+                    self.class_file_path,
+                    return_type=return_type,
+                )
+        return method_stubs
 
     def _determine_function_return_type(self, function_node: ast.FunctionDef) -> str:
         """Determine the return type of a function from its AST node."""
@@ -194,9 +211,7 @@ class StubsGenerator:  # noqa: WPS214
 
         # Determine the return type of the function
         class_name = return_type
-        if (
-            dto_class and return_type == "Any"
-        ):  # If return type was not explicitly determined
+        if (dto_class and return_type == "Any"):  # If return type was not explicitly determined
             class_name = dto_class.__name__
             if class_name not in dto_imports:
                 dto_imports.append(f"from .methods.{file_name} import {class_name}")
